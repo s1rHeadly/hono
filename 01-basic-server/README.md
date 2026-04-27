@@ -87,34 +87,40 @@ If you are typing the file yourself, you can add routes and `serve` step by step
 
 ## What is happening in `src/server.js`
 
-The project’s `src/server.js` looks like this (open the file on disk to see the exact file in full):
+Open `src/server.js` on disk for the full file (including any comments you add). In order of execution as the file is **loaded** by Node:
 
-```js
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
+1. **Imports** — Load `Hono` and `serve` (see the bullets below).
+2. **`const app = new Hono()`** — One app object where every route is registered.
+3. **Route registration** — Each `app.get(path, handler)` tells Hono: “for an incoming **GET** request whose path matches `path`, run `handler`.” Hono **stores** these rules; nothing is sent to the client yet.
+4. **`serve({ fetch: app.fetch, port: 3000 })`** — Start Node’s HTTP server on port **3000** and hand each request to `app.fetch`. Hono then **matches** the request’s method and path to a handler, runs it, and returns whatever you `return` (usually a `Response` from `c.text(…)` or `c.json(…)`).
 
-const app = new Hono();
+**Per-request process (after the server is running):** a client (browser, `curl`, etc.) sends an HTTP request → Node receives it → `app.fetch` runs Hono’s router → the **first** matching route (in the order you registered) runs → the handler’s `return` is the response body and status. If no route matches, you get a **404** (or your custom not-found handler if you set one up).
 
-app.get("/", (c) => {
-  return c.text("Hono is running 🚀");
-});
+### What each Hono `app` call in this file does
 
-serve({ fetch: app.fetch, port: 3000 });
-```
+| Registration | Example URL | What happens in the handler |
+|--------------|-------------|-----------------------------|
+| `app.get("/", …)` | `http://localhost:3000/` | Calls **`c.text(...)`** — plain `text/plain` with the “Hono is running” line. No query string is read. |
+| `app.get("/search", …)` | `http://localhost:3000/search?name=David` | Reads **`c.req.query("name")`** — the value after `?name=` in the URL (or `undefined` if you omit it). Responds with **`c.json(…)`** and a small object that echoes what was searched. |
+| `app.get("/api", …)` | `http://localhost:3000/api` or `http://localhost:3000/api?location=Sydney` | Builds an in-memory `users` array, reads **`c.req.query("location")`**. If that query is present, **`filter`s** users whose `location` matches (case-insensitive) and returns **`c.json(filtered)`**; if not, returns **`c.json(users)`** — the full list. |
+
+**Query strings in one line:** `c.req.query("location")` returns the string to the right of `location=` in the URL (for example `Sydney` from `?location=Sydney`), or `undefined` when the parameter is missing. Return the response with **`c.text`**, **`c.json`**, or **`c.html`** so the correct **`Content-Type`** is set (see the **Context `c` — response helpers** table).
+
+### Imports and `serve` (same in every project using this pattern)
 
 - **`import { Hono } from "hono"`**  
-  Loads the `Hono` constructor. You use it to register routes and middleware. The app object exposes a **`fetch`** function: the same “take a `Request`, return a `Response`” idea as the browser’s `fetch` API, so adapters (like `@hono/node-server`) can plug Hono into real HTTP traffic.
+  Loads the `Hono` constructor. The app object exposes a **`fetch`** function: the same “`Request` in, `Response` out” model as the browser, so the Node adapter can connect real HTTP to your routes.
 
 - **`import { serve } from "@hono/node-server"`**  
-  Loads the Node adapter’s `serve`, which starts the HTTP server and forwards requests to `app.fetch`.
+  Provides **`serve`**, which binds your app to a TCP port and passes each request to `app.fetch`.
 
-- **`const app = new Hono();`** and **`app.get("/", …)`**  
-  Creates the app and registers a root route. The handler returns **`c.text(...)`** — a plain `text/plain` response; see the **Context `c` — response helpers (reference)** section (later in this README) for a full table, including a `c.text` example drawn from this file.
+- **`const app = new Hono();`**  
+  Not optional: this is the object you attach routes to (here with **`app.get`**, and later you could add `app.post`, `app.put`, and so on).
 
 - **`serve({ fetch: app.fetch, port: 3000 })`**  
-  Binds the app to **port 3000** (change the port in code if you need another).
+  Listens on **port 3000** (change the number in code to use another port). Without this call, the script would end and nothing would listen for HTTP.
 
-The sections below show how **static files** and a small **JSON API** fit in once you go beyond this minimal app. When you have read through the walkthrough, the **Project breakdown** section at the **end** of this README restates the same `src/server.js` ideas as a compact mental model and request flow.
+The sections below add **static files** and a separate **in-memory /api/items** teaching example. The **Project breakdown** section at the **end** of this README is a short recap of the same flow (especially useful after you read the query-string routes above).
 
 ---
 
@@ -191,7 +197,7 @@ app.get("*", serveStatic({ root: "./public" }));
 
 ## GET and POST: a small dummy API
 
-The `src/server.js` in this folder only defines `GET /` unless you add more code yourself. The **examples in this section** are copy-paste teaching snippets: you would merge them (and the in-memory `items` array) into your app to try a tiny JSON API. A **route** in Hono is a path pattern plus an HTTP method. Handlers receive a **context** object usually named `c`: you read the request with `c.req` and build the response with helpers like `c.json()`, `c.text()`, or `c.html()`. The **Context `c` — response helpers (reference)** section above has a table of the common `c.*` return helpers.
+The `src/server.js` in this project already defines **`GET /`**, **`GET /search`**, and **`GET /api`** (with in-memory `users` and `c.req.query`), as described in **What is happening in `src/server.js`**. The **examples in this section** (`/api/items`, `POST` create) are *additional* copy-paste teaching snippets: merge them in if you want a separate “items” API. A **route** in Hono is a path pattern plus an HTTP method. Handlers receive a **context** object usually named `c`: you read the request with `c.req` and build the response with helpers like `c.json()`, `c.text()`, or `c.html()`. The **Context `c` — response helpers (reference)** section above has a table of the common `c.*` return helpers.
 
 ### Dummy in-memory data
 
@@ -286,7 +292,7 @@ Then start the dev script:
 npm run dev
 ```
 
-You should see the server start; in a browser, open `http://localhost:3000` for the route defined in `src/server.js` (for example the root `GET /` that returns the `c.text(…)` message). If a script **never** calls `serve(…)`, Node runs the file once and then exits, so there is nothing listening on a port.
+You should see the server start. Try, for example: `http://localhost:3000/` (plain text from **`GET /`**), `http://localhost:3000/api` or `?location=Sydney` (JSON from **`GET /api`**), and `http://localhost:3000/search?name=David` (JSON from **`GET /search`**). If a script **never** calls `serve(…)`, Node runs the file once and then exits, so there is nothing listening on a port.
 
 ---
 

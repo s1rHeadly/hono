@@ -2,10 +2,14 @@
   "name": "01-basic-server",
   "type": "module",
   "scripts": {
-    "dev": "node src/server.js"
+    "dev": "node src/server.js",
+    "format": "prettier --write \"src/**/*.js\""
   },
   "dependencies": {
     "@hono/node-server": "^2.0.0",
     "hono": "^4.12.15"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0"
   }
 }
