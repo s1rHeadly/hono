@@ -1,0 +1,11 @@
+{
+  "name": "01-basic-server",
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.0",
+    "hono": "^4.12.15"
+  }
+}
