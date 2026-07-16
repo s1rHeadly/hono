@@ -1,0 +1,20 @@
+{
+  "name": "01-basic-server",
+  "version": "1.0.0",
+  "description": "Instructions: Add dev script to run the server and add the module type to the package.json",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --exec node src/server.js"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hono/node-server": "^2.0.10",
+    "hono": "^4.12.30"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
