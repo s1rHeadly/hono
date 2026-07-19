@@ -1,0 +1,20 @@
+{
+  "name": "02-routing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --exec node src/server2.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@hono/node-server": "^2.0.10",
+    "hono": "^4.12.30"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

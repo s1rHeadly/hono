@@ -103,6 +103,18 @@ npm init -y
 npm install hono @hono/node-server
 ```
 
+Then add `"type": "module"` to `package.json` so Node treats `.js` files as ES modules and you can use `import` instead of `require`:
+
+```json
+{
+  "type": "module",
+  "dependencies": {
+    "@hono/node-server": "^2.0.0",
+    "hono": "^4.12.0"
+  }
+}
+```
+
 **Cloning or opening an existing project** that already lists dependencies in `package.json`:
 
 ```bash
@@ -493,6 +505,202 @@ app.delete("/users/david", handler); // runs on DELETE only
 - ✅ Every request has a method and a path
 - ✅ Hono matches routes on **both**
 - ✅ `app.get()`, `app.post()`, `app.delete()` register different handlers for the same path
+
+---
+
+## Routing
+
+This section follows the `02-routing/` project. Open `02-routing/src/server.js`, run `npm run dev`, and try each URL in your browser as you read.
+
+A **route** is a URL pattern your server knows how to handle. So far you've used **static** routes — fixed paths like `/` or `/bands` that never change. Real apps need URLs that point at *specific* things: a band, an album, a user profile. Hono lets you build those with **route parameters** — dynamic placeholders in the path.
+
+### Route parameter vs query parameter — don't mix them up
+
+These sound similar but live in **different parts of the URL**.
+
+| | **Route parameter** (path parameter) | **Query parameter** |
+|---|--------------------------------------|---------------------|
+| **Where** | In the **path** — baked into the route pattern | After **`?`** at the end of the URL |
+| **Looks like** | `/bands/pantera` | `/bands?genre=metal` |
+| **In Hono** | `:name` in the route → `c.req.param("name")` | `?genre=metal` → `c.req.query("genre")` |
+| **Think of it as** | *Which* band or album (part of the address) | *Extra options* — filter, sort, page number |
+
+**Route parameter** — a `:placeholder` in the path. Hono matches the pattern and **captures** whatever appears in that spot. `/bands/:name` matches `/bands/pantera` and gives you `name = "pantera"`.
+
+**Query parameter** — optional key–value pairs after `?`. They don't change which route runs; they change *how* it behaves. `/bands?genre=metal` still hits the `/bands` route.
+
+> **Common mistake:** `/bands/korn` uses a **route parameter** (`korn` is captured by `:name`).  
+> `/bands/korn?album=issues&track=counting` still uses a route parameter for `korn` — but `album` and `track` after the `?` are **query parameters**, not route parameters. Don't confuse the two.
+
+### A good mental shortcut
+
+```
+URL PATH          →  Route parameter   →  /bands/pantera
+URL QUERY         →  Query parameter   →  /bands?name=pantera
+REQUEST BODY      →  Submitted data    →  POST /bands
+```
+
+- **Path** → *which thing* you're asking for
+- **Query** → *how to filter or configure* the response (optional)
+- **Body** → *what you're sending* when you create or update (POST — not visible in the URL)
+
+### The `02-routing` server — step by step
+
+Here is the full `server.js` from `02-routing/`. We build it up one route at a time.
+
+#### Step 1 — Static routes (no variables)
+
+These URLs are fixed. Every visit runs the same handler.
+
+```js
+app.get("/", (c) => {
+  return c.text("Routing Project");
+});
+
+app.get("/bands", (c) => {
+  return c.text("List of Bands");
+});
+```
+
+| URL | Response |
+|-----|----------|
+| `http://localhost:2000/` | `Routing Project` |
+| `http://localhost:2000/bands` | `List of Bands` |
+
+Nothing to read from the URL — the path is always the same.
+
+#### Step 2 — One route parameter (`:name`)
+
+Now the path has a **placeholder**. `:name` is not the literal word "name" — it's a slot that captures whatever the visitor types.
+
+```js
+// :name is a dynamic route parameter (also called a path parameter)
+// -> /bands/[value]  e.g. /bands/pantera  /bands/korn
+// Don't mistake this for a query parameter like /bands/korn?album=issues&track=counting
+
+/**
+ * :name is a placeholder in the URL.
+ * Hono captures whatever appears there.
+ * c.req.param("name") retrieves that captured value.
+ */
+app.get("/bands/:name", (c) => {
+  // Think of :name as a variable name in the route pattern.
+  // How do we get the value that replaces :name?
+  // Hono compares the incoming request to the pattern.
+  const bandName = c.req.param("name"); // retrieves that captured value
+  return c.text(`You requested the band ${bandName}`);
+  /**
+   * Pattern:  /bands/:name
+   * Request:  /bands/pantera
+   * Response: You requested the band pantera
+   */
+});
+```
+
+**What happens when you visit `http://localhost:2000/bands/pantera`:**
+
+```
+1. Browser sends:  GET /bands/pantera
+2. Hono checks:    does this match /bands/:name ?
+3. Yes —          :name = "pantera"
+4. Your code:      c.req.param("name")  →  "pantera"
+5. Response:       You requested the band pantera
+```
+
+Think of `:name` as a **variable in the URL**. The string inside `c.req.param("…")` must match the name after the colon:
+
+| Route pattern | How to read it |
+|---------------|----------------|
+| `/bands/:name` | `c.req.param("name")` |
+| `/bands/:bandName` | `c.req.param("bandName")` |
+
+#### Step 3 — Multiple route parameters
+
+You can have more than one placeholder in a single path. Each `:segment` gets its own `c.req.param()` call.
+
+```js
+// e.g. /bands/pantera/cowboysfromhell  or  /bands/korn/followtheleader
+app.get("/bands/:name/albums/:album", (c) => {
+  const bandName = c.req.param("name");   // gets the :name value
+  const albumName = c.req.param("album"); // gets the :album value
+
+  return c.text(`Band: ${bandName} | album: ${albumName}`);
+});
+```
+
+| URL | `name` | `album` | Response |
+|-----|--------|---------|----------|
+| `/bands/pantera/albums/cowboysfromhell` | `pantera` | `cowboysfromhell` | `Band: pantera \| album: cowboysfromhell` |
+| `/bands/korn/albums/followtheleader` | `korn` | `followtheleader` | `Band: korn \| album: followtheleader` |
+
+Hono matches **left to right**. Each `:word` in the pattern lines up with one segment in the URL.
+
+#### Step 4 — Query parameters (coming next)
+
+Query parameters are optional extras after `?`. The `02-routing` project doesn't use them yet, but you'll see them soon:
+
+```
+/bands?genre=metal
+```
+
+```js
+app.get("/bands", (c) => {
+  const genre = c.req.query("genre"); // "metal" or undefined
+  return c.text(genre ? `Bands in ${genre}` : "All bands");
+});
+```
+
+Same `/bands` route — `genre` is optional. `GET /bands` and `GET /bands?genre=metal` both match; only the query string differs.
+
+You can combine everything on one request:
+
+```
+GET /bands/pantera/albums/cowboysfromhell?track=5
+```
+
+- **Path params** (`pantera`, `cowboysfromhell`) — identify band and album
+- **Query param** (`track=5`) — optional extra detail
+
+### Complete `02-routing/src/server.js`
+
+```js
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+
+const app = new Hono();
+
+app.get("/", (c) => {
+  return c.text("Routing Project");
+});
+
+app.get("/bands", (c) => {
+  return c.text("List of Bands");
+});
+
+app.get("/bands/:name", (c) => {
+  const bandName = c.req.param("name");
+  return c.text(`You requested the band ${bandName}`);
+});
+
+app.get("/bands/:name/albums/:album", (c) => {
+  const bandName = c.req.param("name");
+  const albumName = c.req.param("album");
+  return c.text(`Band: ${bandName} | album: ${albumName}`);
+});
+
+serve({
+  fetch: app.fetch,
+  port: 2000,
+});
+```
+
+### Routing checkpoint
+
+- ✅ **Static route** — fixed path, no placeholders (`/bands`)
+- ✅ **Route parameter** — `:name` in the path captures a value (`/bands/pantera`)
+- ✅ **Multiple params** — each `:segment` has its own `c.req.param("segment")`
+- ✅ **Query parameter** — optional filters after `?` (`/bands?genre=metal`) — read with `c.req.query()`
+- ✅ Route params and query params look similar in name but live in **different parts of the URL** — don't mix them up
 
 ---
 
