@@ -373,3 +373,162 @@ The next likely ones would be:
 ```
 
 means your ID doesn't exist.
+
+---
+
+## Summary
+
+### The big concepts you have learned in Project 03
+
+### 1. Hono routing
+
+You now understand:
+
+```js
+app.get("/bands/:id", ...)
+```
+
+is not connected to your data.
+
+The route just says:
+
+> "If someone requests this URL pattern, run this function."
+
+The data work happens inside:
+
+```js
+bands.find(...)
+bands.filter(...)
+Object.assign(...)
+```
+
+That distinction was one of your earlier questions, and you nailed it.
+
+### 2. Request → Logic → Response
+
+Your API now follows this pattern:
+
+```text
+HTTP Request
+      |
+      ↓
+Hono Route
+      |
+      ↓
+JavaScript Logic
+      |
+      ↓
+JSON Response
+```
+
+Example:
+
+```text
+PATCH /bands/1
+        ↓
+Find band with id 1
+        ↓
+Apply changes
+        ↓
+Return updated JSON
+```
+
+This pattern is everywhere in backend development.
+
+### 3. Client data vs server data
+
+This was probably the biggest lightbulb moment.
+
+Client sends:
+
+```json
+{
+  "name": "Tool",
+  "genre": "Progressive Metal",
+  "formed": 1990
+}
+```
+
+Server creates:
+
+```json
+{
+  "id": 1785811295468,
+  "name": "Tool",
+  "genre": "Progressive Metal",
+  "formed": 1990
+}
+```
+
+The server is responsible for the final resource.
+
+That idea will carry over when we eventually use databases.
+
+### 4. HTTP status codes
+
+You now have practical experience with:
+
+**200 OK**
+
+Successful request
+
+**201 Created**
+
+Resource created
+
+(we can improve your POST to use this)
+
+**400 Bad Request**
+
+The client sent bad data
+
+Example:
+
+```json
+{
+  "name": ""
+}
+```
+
+**404 Not Found**
+
+Resource doesn't exist
+
+Example:
+
+```http
+GET /bands/999
+```
+
+**409 Conflict**
+
+Resource clashes with existing data
+
+Example:
+
+- Create Tool
+- Tool already exists
+
+### 5. JavaScript concepts used
+
+You reinforced:
+
+**`.find()`**
+
+Find one item.
+
+**`.filter()`**
+
+Find many items.
+
+**`.push()`**
+
+Add an item.
+
+**`Object.assign()`**
+
+Merge objects.
+
+**`async/await`**
+
+Handle promises.
