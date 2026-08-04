@@ -1,0 +1,20 @@
+{
+  "name": "03-crud-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --exec node src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@hono/node-server": "^2.0.12",
+    "hono": "^4.12.32"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

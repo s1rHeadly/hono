@@ -39,6 +39,7 @@ app.get("/bands/:name", (c) => {
   );
 
   if (!band) {
+    // if the band ID does not exist
     return c.json({ error: `The band: ${bandName} is not found` }, 404);
   }
 
