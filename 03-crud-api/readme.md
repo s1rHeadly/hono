@@ -1,10 +1,46 @@
 # Project 03 — CRUD API
 
-This project builds a small bands CRUD API with Hono. The walkthrough below follows what happens on a `POST /bands` request — from the client, through validation, into storage, and back as a response.
+This project builds a small bands CRUD API with Hono. Work through the sections below in order — each concept section ends with a short Postman checkpoint so you can test what you just built.
 
 ---
 
-## The API data flow
+## How to work through this project
+
+```text
+1. Start the server (see Quick start below)
+2. Confirm GET routes work (Postman steps 1–2, or skip if already done)
+3. Read "The API data flow" → test POST in Postman
+4. Read "PATCH an existing band" → test PATCH in Postman
+5. Read "DELETE a band" → test DELETE in Postman
+6. Run the full 8-step test order to confirm everything works together
+7. Try the error cases, then read the Summary
+```
+
+**Examples used throughout this readme** (so you always know which band to pick):
+
+| Band | Id | Used for |
+| --- | --- | --- |
+| Pantera | `1` | GET one, PATCH |
+| Korn | `2` | DELETE |
+| Tool | *(new)* | POST — not in seed data |
+
+Seed data also includes Gojira (`3`) and Sleep Token (`4`).
+
+### Quick start
+
+From the `03-crud-api` folder:
+
+```bash
+npm run dev
+```
+
+Server runs at `http://localhost:2000`. Open Postman and click **+** to create a request. Pick the HTTP method from the **dropdown left of the URL** — do not type `GET` or `POST` into the URL box.
+
+For POST and PATCH bodies, use **Body → raw → JSON**. Postman sets `Content-Type: application/json`, which your server needs for `await c.req.json()`.
+
+---
+
+## The API data flow (POST)
 
 ### 1. Client sends a request
 
@@ -115,6 +151,35 @@ Client receives:
   "formed": 1990
 }
 ```
+
+---
+
+### Checkpoint — test your GET routes
+
+If you have not tested read routes yet:
+
+1. **GET** `http://localhost:2000/bands` — array of bands
+2. **GET** `http://localhost:2000/bands/1` — single Pantera object
+
+Details: [Testing in Postman → steps 1–2](#1-read--get-all-bands).
+
+### Checkpoint — test your POST route
+
+When your `app.post("/bands", ...)` handler is in place:
+
+1. **POST** `http://localhost:2000/bands` with body:
+
+```json
+{
+  "name": "Tool",
+  "genre": "Progressive Metal",
+  "formed": 1990
+}
+```
+
+2. **GET** `http://localhost:2000/bands` — Tool should appear in the array.
+
+Details and expected responses: [Testing in Postman → CREATE](#3-create--add-a-band).
 
 ---
 
@@ -287,7 +352,7 @@ with status `404`.
 
 ### Your turn
 
-Write only this first part:
+If you are building along, write the first part of your PATCH handler:
 
 ```js
 app.patch("/bands/:id", async (c) => {
@@ -302,85 +367,109 @@ Include:
 - Find the band
 - Return `404` if it doesn't exist
 
-See [Testing in Postman](#testing-in-postman) below for step-by-step instructions for every request type.
+If `server.js` already has the full PATCH route, skip ahead to the checkpoint below.
+
+### Checkpoint — test your PATCH route
+
+1. **PATCH** `http://localhost:2000/bands/1` with body:
+
+```json
+{
+  "genre": "Groove Metal"
+}
+```
+
+2. **GET** `http://localhost:2000/bands/1` — genre should be `Groove Metal`; `name` and `formed` stay the same.
+
+Details: [Testing in Postman → UPDATE](#5-update--patch).
+
+---
+
+## DELETE a band
+
+DELETE removes a resource by id. No JSON body is needed.
+
+Your route `app.delete("/bands/:id", ...)` follows the same pattern as GET and PATCH:
+
+1. Read `id` from the URL
+2. Validate it is a number
+3. Find the band's **index** in the array with `findIndex()`
+4. If index is `-1`, return `404`
+5. Remove it with `splice(index, 1)`
+6. Return the remaining bands
+
+```text
+Get id → findIndex() → find band → splice(index, 1) → remove band
+```
+
+### Checkpoint — test your DELETE route
+
+1. **DELETE** `http://localhost:2000/bands/2` (Korn)
+2. **GET** `http://localhost:2000/bands` — Korn should be gone.
+
+Details: [Testing in Postman → DELETE](#7-delete--remove-a-band).
 
 ---
 
 ## Testing in Postman
 
-Use these steps to test every route in this project. The server runs on **port 2000**.
+Use this section as your full reference. If you hit the checkpoints above while reading, steps 3–8 will feel familiar — run the **recommended test order** below once to walk through the complete CRUD lifecycle.
 
-### Before you start
+Seed data: ids **1–4** (Pantera, Korn, Gojira, Sleep Token).
 
-1. From the `03-crud-api` folder, start the server:
-
-   ```bash
-   npm run dev
-   ```
-
-2. Open Postman and create a new request (or use the **+** tab).
-
-3. For every request below, use this layout:
-
-   ```text
-   [ METHOD ▼ ]  http://localhost:2000/...
-   ```
-
-   Pick the HTTP method from the **dropdown on the left**. Do not type `GET`, `POST`, etc. into the URL box.
-
-4. When a request needs a JSON body, go to **Body → raw → JSON** and paste the example body.
-
-The seed data includes bands with ids **1–4** (Pantera, Korn, Gojira, Sleep Token). Use those ids unless you have created new bands with POST.
-
----
-
-### GET — root health check
-
-| Field | Value |
-| --- | --- |
-| Method | `GET` |
-| URL | `http://localhost:2000/` |
-
-No body required.
-
-**Expected response** — plain text:
+### Recommended test order
 
 ```text
-Bands Crud API
+① GET  /bands        → see existing data
+② GET  /bands/1      → get one band
+③ POST /bands        → create Tool
+④ GET  /bands        → confirm Tool was created
+⑤ PATCH /bands/1     → change Pantera's genre
+⑥ GET  /bands/1      → confirm the change
+⑦ DELETE /bands/2    → remove Korn
+⑧ GET  /bands        → confirm Korn is gone
 ```
 
 ---
 
-### GET — list all bands
+### 1. READ — Get all bands
 
-| Field | Value |
-| --- | --- |
-| Method | `GET` |
-| URL | `http://localhost:2000/bands` |
+1. Select **GET**
+2. URL: `http://localhost:2000/bands`
+3. Click **Send**
 
-No body required.
-
-**Expected response** — JSON array of all bands:
+You should get an array of all bands:
 
 ```json
 [
-  { "id": 1, "name": "Pantera", "genre": "Metal", "formed": 1981 },
-  ...
+  {
+    "id": 1,
+    "name": "Pantera",
+    "genre": "Metal",
+    "formed": 1981
+  },
+  {
+    "id": 2,
+    "name": "Korn",
+    "genre": "Nu Metal",
+    "formed": 1993
+  }
 ]
 ```
 
+Your list may include more bands (Gojira, Sleep Token, etc.).
+
 ---
 
-### GET — one band by id
+### 2. READ — Get one band
 
-| Field | Value |
-| --- | --- |
-| Method | `GET` |
-| URL | `http://localhost:2000/bands/1` |
+Pick an id from your data. If Pantera has `"id": 1`:
 
-Replace `1` with any valid band id. No body required.
+1. Select **GET**
+2. URL: `http://localhost:2000/bands/1`
+3. Click **Send**
 
-**Expected response** — `200 OK`:
+You should get just that band:
 
 ```json
 {
@@ -391,22 +480,16 @@ Replace `1` with any valid band id. No body required.
 }
 ```
 
-**Error cases to try:**
-
-- `http://localhost:2000/bands/abc` → `400` with `{ "error": "ID must be a number" }`
-- `http://localhost:2000/bands/999` → `404` with `{ "error": "The band id: 999 is not found" }`
+This matches your route `app.get("/bands/:id", ...)`. The `:id` in the URL becomes `1`, and Hono reads it with `c.req.param("id")`.
 
 ---
 
-### POST — create a new band
+### 3. CREATE — Add a band
 
-| Field | Value |
-| --- | --- |
-| Method | `POST` |
-| URL | `http://localhost:2000/bands` |
-| Body | raw → JSON |
-
-Example body:
+1. Select **POST**
+2. URL: `http://localhost:2000/bands`
+3. **Body → raw → JSON**
+4. Paste:
 
 ```json
 {
@@ -416,7 +499,11 @@ Example body:
 }
 ```
 
-**Expected response** — the created band (note the server-generated `id`):
+5. Click **Send**
+
+This is the same body from [The API data flow](#the-api-data-flow-post). Your server parses it with `await c.req.json()`, then builds the band (adding `id` via `Date.now()`).
+
+Expected response (your `id` will differ):
 
 ```json
 {
@@ -427,31 +514,32 @@ Example body:
 }
 ```
 
-**Error cases to try:**
+---
 
-Missing fields (e.g. omit `"formed"`) → `400`:
+### 4. Verify the POST worked
 
-```json
-{ "error": "Missing required fields" }
-```
+1. Select **GET**
+2. URL: `http://localhost:2000/bands`
+3. Click **Send**
 
-Create the same band twice (same `name`, case-insensitive) → `409`:
+Your new Tool entry should appear in the array.
 
-```json
-{ "error": "Band already exists" }
+Good habit after any create:
+
+```text
+POST → create something → GET → verify it exists
 ```
 
 ---
 
-### PATCH — update part of a band
+### 5. UPDATE — PATCH
 
-| Field | Value |
-| --- | --- |
-| Method | `PATCH` |
-| URL | `http://localhost:2000/bands/1` |
-| Body | raw → JSON |
+Pick an existing id (e.g. `1` for Pantera):
 
-Only send the fields you want to change:
+1. Select **PATCH**
+2. URL: `http://localhost:2000/bands/1`
+3. **Body → raw → JSON**
+4. Send only the field you want to change:
 
 ```json
 {
@@ -459,7 +547,13 @@ Only send the fields you want to change:
 }
 ```
 
-**Expected response** — updated band, other fields unchanged:
+5. Click **Send**
+
+Matches the example in [PATCH an existing band](#patch-an-existing-band). Your code merges the partial update with `Object.assign(getBandById, body)`.
+
+So Pantera goes from `"genre": "Metal"` to `"genre": "Groove Metal"` — `name` and `formed` stay the same.
+
+Expected response:
 
 ```json
 {
@@ -470,40 +564,78 @@ Only send the fields you want to change:
 }
 ```
 
-**Error cases to try:**
-
-- `http://localhost:2000/bands/abc` → `400` with `{ "error": "ID must be a number" }`
-- `http://localhost:2000/bands/999` → `404` with `{ "error": "The band id: 999 is not found" }`
+You did not need to send `name` or `formed`. That is what **PATCH** means — change part of a resource, not replace the whole thing.
 
 ---
 
-### DELETE — remove a band
+### 6. Verify the PATCH worked
 
-| Field | Value |
-| --- | --- |
-| Method | `DELETE` |
-| URL | `http://localhost:2000/bands/4` |
+1. Select **GET**
+2. URL: `http://localhost:2000/bands/1`
+3. Click **Send**
 
-Replace `4` with the id of the band you want to remove. No body required.
+Confirm the genre (or whatever you changed) is updated.
 
-**Expected response** — remaining bands wrapped in a `bands` property:
+---
+
+### 7. DELETE — Remove a band
+
+Remove Korn (`id: 2`) so you do not delete Pantera, which you patched in step 5:
+
+1. Select **DELETE**
+2. URL: `http://localhost:2000/bands/2`
+3. No body — click **Send**
+
+See [DELETE a band](#delete-a-band) for how `findIndex()` and `splice()` work in your route.
+
+You get the remaining bands back:
 
 ```json
 {
   "bands": [
     { "id": 1, "name": "Pantera", "genre": "Metal", "formed": 1981 },
-    { "id": 2, "name": "Korn", "genre": "Nu Metal", "formed": 1993 },
     { "id": 3, "name": "Gojira", "genre": "Progressive Metal", "formed": 1996 }
   ]
 }
 ```
 
-**Error cases to try:**
+(Exact list depends on what you created or deleted earlier.)
 
-- `http://localhost:2000/bands/abc` → `400` with `{ "error": "ID must be a number" }`
-- `http://localhost:2000/bands/999` → `404` with `{ "error": "The band id: 999 is not found" }`
+---
 
-**Tip:** Run `GET http://localhost:2000/bands` after a DELETE to confirm the band is gone from the list.
+### 8. Verify the DELETE worked
+
+1. Select **GET**
+2. URL: `http://localhost:2000/bands`
+3. Click **Send**
+
+The deleted band should no longer appear.
+
+---
+
+### Extra: root health check
+
+| Field | Value |
+| --- | --- |
+| Method | `GET` |
+| URL | `http://localhost:2000/` |
+
+Expected response — plain text: `Bands Crud API`
+
+---
+
+### Extra: error cases to try
+
+Once the happy path works, try these to see how your API handles bad input:
+
+| Request | Expected |
+| --- | --- |
+| `GET /bands/abc` | `400` — `{ "error": "ID must be a number" }` |
+| `GET /bands/999` | `404` — `{ "error": "The band id: 999 is not found" }` |
+| `POST /bands` with missing `"formed"` | `400` — `{ "error": "Missing required fields" }` |
+| `POST /bands` with duplicate name (e.g. Tool twice) | `409` — `{ "error": "Band already exists" }` |
+| `PATCH /bands/999` | `404` — band not found |
+| `DELETE /bands/999` | `404` — band not found |
 
 ---
 
