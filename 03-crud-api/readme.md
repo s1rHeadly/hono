@@ -302,44 +302,156 @@ Include:
 - Find the band
 - Return `404` if it doesn't exist
 
-### Testing PATCH in Postman
+See [Testing in Postman](#testing-in-postman) below for step-by-step instructions for every request type.
 
-Check your Postman URL field.
+---
 
-You probably have something like:
+## Testing in Postman
 
-```http
-PATCH http://localhost:2000/bands/1
-```
+Use these steps to test every route in this project. The server runs on **port 2000**.
 
-in the URL box.
+### Before you start
 
-The method should not be typed there.
+1. From the `03-crud-api` folder, start the server:
 
-You should have:
+   ```bash
+   npm run dev
+   ```
 
-- **Method dropdown** (left side) → `PATCH`
-- **URL box** → `http://localhost:2000/bands/1`
+2. Open Postman and create a new request (or use the **+** tab).
 
-Like:
+3. For every request below, use this layout:
+
+   ```text
+   [ METHOD ▼ ]  http://localhost:2000/...
+   ```
+
+   Pick the HTTP method from the **dropdown on the left**. Do not type `GET`, `POST`, etc. into the URL box.
+
+4. When a request needs a JSON body, go to **Body → raw → JSON** and paste the example body.
+
+The seed data includes bands with ids **1–4** (Pantera, Korn, Gojira, Sleep Token). Use those ids unless you have created new bands with POST.
+
+---
+
+### GET — root health check
+
+| Field | Value |
+| --- | --- |
+| Method | `GET` |
+| URL | `http://localhost:2000/` |
+
+No body required.
+
+**Expected response** — plain text:
 
 ```text
-[ PATCH ▼ ]  http://localhost:2000/bands/1
+Bands Crud API
 ```
 
-Then check your Body.
+---
 
-Go to:
+### GET — list all bands
 
-```text
-Body
-  ↓
-raw
-  ↓
-JSON
+| Field | Value |
+| --- | --- |
+| Method | `GET` |
+| URL | `http://localhost:2000/bands` |
+
+No body required.
+
+**Expected response** — JSON array of all bands:
+
+```json
+[
+  { "id": 1, "name": "Pantera", "genre": "Metal", "formed": 1981 },
+  ...
+]
 ```
 
-Add:
+---
+
+### GET — one band by id
+
+| Field | Value |
+| --- | --- |
+| Method | `GET` |
+| URL | `http://localhost:2000/bands/1` |
+
+Replace `1` with any valid band id. No body required.
+
+**Expected response** — `200 OK`:
+
+```json
+{
+  "id": 1,
+  "name": "Pantera",
+  "genre": "Metal",
+  "formed": 1981
+}
+```
+
+**Error cases to try:**
+
+- `http://localhost:2000/bands/abc` → `400` with `{ "error": "ID must be a number" }`
+- `http://localhost:2000/bands/999` → `404` with `{ "error": "The band id: 999 is not found" }`
+
+---
+
+### POST — create a new band
+
+| Field | Value |
+| --- | --- |
+| Method | `POST` |
+| URL | `http://localhost:2000/bands` |
+| Body | raw → JSON |
+
+Example body:
+
+```json
+{
+  "name": "Tool",
+  "genre": "Progressive Metal",
+  "formed": 1990
+}
+```
+
+**Expected response** — the created band (note the server-generated `id`):
+
+```json
+{
+  "id": 1785811295468,
+  "name": "Tool",
+  "genre": "Progressive Metal",
+  "formed": 1990
+}
+```
+
+**Error cases to try:**
+
+Missing fields (e.g. omit `"formed"`) → `400`:
+
+```json
+{ "error": "Missing required fields" }
+```
+
+Create the same band twice (same `name`, case-insensitive) → `409`:
+
+```json
+{ "error": "Band already exists" }
+```
+
+---
+
+### PATCH — update part of a band
+
+| Field | Value |
+| --- | --- |
+| Method | `PATCH` |
+| URL | `http://localhost:2000/bands/1` |
+| Body | raw → JSON |
+
+Only send the fields you want to change:
 
 ```json
 {
@@ -347,9 +459,7 @@ Add:
 }
 ```
 
-#### Expected response
-
-You should get:
+**Expected response** — updated band, other fields unchanged:
 
 ```json
 {
@@ -360,19 +470,40 @@ You should get:
 }
 ```
 
-#### If you get a different error after fixing that
+**Error cases to try:**
 
-The next likely ones would be:
+- `http://localhost:2000/bands/abc` → `400` with `{ "error": "ID must be a number" }`
+- `http://localhost:2000/bands/999` → `404` with `{ "error": "The band id: 999 is not found" }`
 
-**404**
+---
+
+### DELETE — remove a band
+
+| Field | Value |
+| --- | --- |
+| Method | `DELETE` |
+| URL | `http://localhost:2000/bands/4` |
+
+Replace `4` with the id of the band you want to remove. No body required.
+
+**Expected response** — remaining bands wrapped in a `bands` property:
 
 ```json
 {
-  "error": "The band id: 1 is not found"
+  "bands": [
+    { "id": 1, "name": "Pantera", "genre": "Metal", "formed": 1981 },
+    { "id": 2, "name": "Korn", "genre": "Nu Metal", "formed": 1993 },
+    { "id": 3, "name": "Gojira", "genre": "Progressive Metal", "formed": 1996 }
+  ]
 }
 ```
 
-means your ID doesn't exist.
+**Error cases to try:**
+
+- `http://localhost:2000/bands/abc` → `400` with `{ "error": "ID must be a number" }`
+- `http://localhost:2000/bands/999` → `404` with `{ "error": "The band id: 999 is not found" }`
+
+**Tip:** Run `GET http://localhost:2000/bands` after a DELETE to confirm the band is gone from the list.
 
 ---
 

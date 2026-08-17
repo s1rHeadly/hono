@@ -86,6 +86,8 @@ app.post("/bands", async (c) => {
   return c.json(bandObj);
 });
 
+// ===============================
+
 // PATCH
 // ===========
 
@@ -118,6 +120,36 @@ app.patch("/bands/:id", async (c) => {
   Object.assign(getBandById, body);
 
   return c.json(getBandById);
+});
+
+// ===============================
+
+// DELETE -
+// ===========
+
+// remove a band by its index
+
+app.delete("/bands/:id", (c) => {
+  const id = c.req.param("id");
+
+  // band URL path must be a number
+  if (isNaN(Number(id))) {
+    return c.json({ error: "ID must be a number" }, 400);
+  }
+
+  // get the index of the band given the ID of the chosen band
+  const bandIndex = bands.findIndex((band) => band.id === Number(id));
+
+  // guard clause if this returned value is -1, ie the bands id doesnt exist
+  if (bandIndex === -1) {
+    return c.json({ error: `The band id: ${id} is not found` }, 404);
+  }
+
+  // pull the band from the bands array by its index value
+  bands.splice(bandIndex, 1);
+
+  //return the remaining bands object in json
+  return c.json({ bands });
 });
 
 // Start the Node server
