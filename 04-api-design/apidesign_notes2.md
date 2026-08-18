@@ -493,3 +493,56 @@ Did the server fail?
 And remember:
 
 Status codes are part of your API's contract. A well-designed API doesn't just return data; it clearly communicates what happened.
+
+---
+
+## 17. Request → Response Mental Model
+
+So far, your mental model is:
+
+```text
+REQUEST
+   │
+   ├── HTTP method
+   │      GET / POST / PATCH / DELETE
+   │
+   ├── URL
+   │      /bands/5
+   │
+   ├── Query parameters
+   │      ?genre=metal&sort=name
+   │
+   ▼
+  HONO
+   │
+   ▼
+RESPONSE
+   │
+   ├── Status code
+   │      200 / 201 / 204 / 400 / 404 / 409 / 500
+   │
+   └── Response body
+          JSON
+```
+
+Next, we get to the fun bit.
+
+We're going to actually create one of these queries:
+
+```http
+GET /bands?genre=metal
+```
+
+You'll learn how Hono:
+
+```js
+c.req.query("genre")
+```
+
+extracts the value, and then we'll use JavaScript's:
+
+```js
+.filter()
+```
+
+to actually do something with it.

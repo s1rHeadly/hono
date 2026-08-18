@@ -2,29 +2,160 @@
 
 This project builds on [Project 01](../01-basic-server/) and explores how Hono connects URLs to JavaScript functions.
 
-For setup and core Hono concepts, see [`docs/hono.md`](../docs/hono.md) and the [Project 01 README](../01-basic-server/README.md).
+For setup and core Hono concepts, see [`docs/hono.md`](../docs/hono.md) and the [Project 01 README](../01-basic-server/readme.md).
 
 ---
 
-## Run this project
+## Prerequisites
 
-From the `02-routing` directory in a terminal.
+Install [Node.js](https://nodejs.org/) (LTS is fine). That includes **npm**, which downloads packages and runs scripts.
 
-### Install dependencies
+Check they are available:
 
 ```bash
-npm install
+node -v
+npm -v
 ```
 
-### Start the server
+---
+
+## Create this project from scratch
+
+Assume you have **no** `node_modules/`, no `package.json`, and no source files yet. Follow these steps in order.
+
+### 1. Create the project folder
+
+```bash
+mkdir 02-routing
+cd 02-routing
+```
+
+### 2. Initialize npm
+
+```bash
+npm init -y
+```
+
+### 3. Install Hono and the Node adapter
+
+```bash
+npm install hono @hono/node-server
+```
+
+### 4. Install nodemon (development only)
+
+```bash
+npm install --save-dev nodemon
+```
+
+### 5. Configure `package.json`
+
+```bash
+npm pkg set type=module
+npm pkg set scripts.dev="nodemon --watch src --exec node src/server2.js"
+```
+
+The default `dev` script runs `src/server2.js` — the complete version with band data, genre filtering, and single-band lookup. To experiment with route parameters only, point the script at `src/server.js` instead:
+
+```bash
+npm pkg set scripts.dev="nodemon --watch src --exec node src/server.js"
+```
+
+### 6. Create `data/bands.js`
+
+```bash
+mkdir data
+```
+
+Create `data/bands.js` with:
+
+```js
+const bands = [
+  { id: 1, name: "Pantera", genre: "metal" },
+  { id: 2, name: "Korn", genre: "nu-metal" },
+  { id: 3, name: "Slayer", genre: "thrash" },
+  { id: 4, name: "Metallica", genre: "thrash" },
+  { id: 5, name: "Megadeth", genre: "thrash" },
+  { id: 6, name: "Iron Maiden", genre: "heavy" },
+  { id: 7, name: "Black Sabbath", genre: "classic" },
+];
+
+export default bands;
+```
+
+### 7. Create `src/server2.js`
+
+```bash
+mkdir src
+```
+
+Create `src/server2.js` with:
+
+```js
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import bands from "../data/bands.js";
+
+const app = new Hono();
+
+app.get("/bands", (c) => {
+  const genre = c.req.query("genre");
+
+  const filteredGenre = genre
+    ? bands.filter((band) => band.genre === genre)
+    : [...bands];
+
+  return c.json(filteredGenre);
+});
+
+app.get("/bands/:name", (c) => {
+  const bandName = c.req.param("name");
+
+  const band = bands.find(
+    (band) => band.name.toLowerCase() === bandName.toLowerCase(),
+  );
+
+  if (!band) {
+    return c.json({ error: `The band: ${bandName} is not found` }, 404);
+  }
+
+  return c.json(band);
+});
+
+serve({
+  fetch: app.fetch,
+  port: 2000,
+});
+```
+
+`src/server.js` in the repo is an earlier learning file for route and query parameters (including the duplicate-route gotcha). You can add it later while working through the guide below.
+
+### 8. Start the server
 
 ```bash
 npm run dev
 ```
 
-This runs `src/server2.js` — the complete version with band data, genre filtering, and single-band lookup.
+Try these URLs in a browser:
 
-To experiment with route parameters only, change the `dev` script in `package.json` to point at `src/server.js` instead.
+- `http://localhost:2000/bands` — all bands (JSON)
+- `http://localhost:2000/bands?genre=metal` — bands filtered by genre
+- `http://localhost:2000/bands/korn` — one band by name
+
+---
+
+## Run this project (existing folder)
+
+If you cloned the repo or already have this folder with a `package.json`, from the `02-routing` directory:
+
+```bash
+npm install
+npm run dev
+```
+
+`npm install` with no package names reads `package.json` (and `package-lock.json` if present) and downloads everything into `node_modules/`.
+
+This runs `src/server2.js` by default. To experiment with route parameters only, change the `dev` script in `package.json` to point at `src/server.js` instead.
 
 Try these URLs in a browser:
 

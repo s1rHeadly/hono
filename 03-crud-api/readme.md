@@ -2,12 +2,158 @@
 
 This project builds a small bands CRUD API with Hono. Work through the sections below in order — each concept section ends with a short Postman checkpoint so you can test what you just built.
 
+For setup and core Hono concepts, see [`docs/hono.md`](../docs/hono.md).
+
+---
+
+## Prerequisites
+
+Install [Node.js](https://nodejs.org/) (LTS is fine). That includes **npm**, which downloads packages and runs scripts.
+
+Check they are available:
+
+```bash
+node -v
+npm -v
+```
+
+---
+
+## Create this project from scratch
+
+Assume you have **no** `node_modules/`, no `package.json`, and no source files yet. Follow these steps in order.
+
+### 1. Create the project folder
+
+```bash
+mkdir 03-crud-api
+cd 03-crud-api
+```
+
+### 2. Initialize npm
+
+```bash
+npm init -y
+```
+
+### 3. Install Hono and the Node adapter
+
+```bash
+npm install hono @hono/node-server
+```
+
+### 4. Install nodemon (development only)
+
+```bash
+npm install --save-dev nodemon
+```
+
+### 5. Configure `package.json`
+
+```bash
+npm pkg set type=module
+npm pkg set scripts.dev="nodemon --watch src --exec node src/server.js"
+```
+
+### 6. Create `data/bands.js`
+
+```bash
+mkdir data
+```
+
+Create `data/bands.js` with:
+
+```js
+const bands = [
+  { id: 1, name: "Pantera", genre: "Metal", formed: 1981 },
+  { id: 2, name: "Korn", genre: "Nu Metal", formed: 1993 },
+  { id: 3, name: "Gojira", genre: "Progressive Metal", formed: 1996 },
+  { id: 4, name: "Sleep Token", genre: "Alternative Metal", formed: 2016 },
+];
+
+export default bands;
+```
+
+### 7. Create `src/server.js`
+
+```bash
+mkdir src
+```
+
+Create `src/server.js` with the CRUD routes. Start with the GET routes, then add POST, PATCH, and DELETE as you work through this readme — or copy the full file from the repo if you want everything at once.
+
+Minimal starting point (GET routes only):
+
+```js
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import bands from "../data/bands.js";
+
+const app = new Hono();
+
+app.get("/", (c) => {
+  return c.text("Bands Crud API");
+});
+
+app.get("/bands", (c) => {
+  return c.json(bands);
+});
+
+app.get("/bands/:id", (c) => {
+  const id = c.req.param("id");
+
+  if (isNaN(Number(id))) {
+    return c.json({ error: "ID must be a number" }, 400);
+  }
+
+  const getBandById = bands.find((band) => band.id === Number(id));
+
+  if (!getBandById) {
+    return c.json({ error: `The band id: ${id} is not found` }, 404);
+  }
+
+  return c.json(getBandById);
+});
+
+serve({
+  fetch: app.fetch,
+  port: 2000,
+});
+```
+
+Add POST, PATCH, and DELETE handlers as you reach each section below. The completed `src/server.js` in the repo has all routes in place.
+
+### 8. Start the server
+
+```bash
+npm run dev
+```
+
+Server runs at `http://localhost:2000`.
+
+---
+
+## Run this project (existing folder)
+
+If you cloned the repo or already have this folder with a `package.json`, from the `03-crud-api` directory:
+
+```bash
+npm install
+npm run dev
+```
+
+`npm install` with no package names reads `package.json` (and `package-lock.json` if present) and downloads everything into `node_modules/`.
+
+Server runs at `http://localhost:2000`. Open Postman and click **+** to create a request. Pick the HTTP method from the **dropdown left of the URL** — do not type `GET` or `POST` into the URL box.
+
+For POST and PATCH bodies, use **Body → raw → JSON**. Postman sets `Content-Type: application/json`, which your server needs for `await c.req.json()`.
+
 ---
 
 ## How to work through this project
 
 ```text
-1. Start the server (see Quick start below)
+1. Start the server (see setup above)
 2. Confirm GET routes work (Postman steps 1–2, or skip if already done)
 3. Read "The API data flow" → test POST in Postman
 4. Read "PATCH an existing band" → test PATCH in Postman
@@ -25,18 +171,6 @@ This project builds a small bands CRUD API with Hono. Work through the sections 
 | Tool | *(new)* | POST — not in seed data |
 
 Seed data also includes Gojira (`3`) and Sleep Token (`4`).
-
-### Quick start
-
-From the `03-crud-api` folder:
-
-```bash
-npm run dev
-```
-
-Server runs at `http://localhost:2000`. Open Postman and click **+** to create a request. Pick the HTTP method from the **dropdown left of the URL** — do not type `GET` or `POST` into the URL box.
-
-For POST and PATCH bodies, use **Body → raw → JSON**. Postman sets `Content-Type: application/json`, which your server needs for `await c.req.json()`.
 
 ---
 
