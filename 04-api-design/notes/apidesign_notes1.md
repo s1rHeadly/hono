@@ -449,25 +449,37 @@ The important thing is that our API defines the meaning and uses it consistently
 
 ## 13. Mental Model
 
-A useful way to think about API design:
+A useful way to think about API design — from the URL the client sends to the JavaScript you write in Hono:
 
 ```text
-                    API
-                     │
-             ┌───────┴───────┐
-             │               │
-        RESOURCE          PARAMETERS
-             │               │
-          /bands       ┌─────┴─────┐
-                       │           │
-                    PATH        QUERY
-                       │           │
-                   /bands/5   /bands?genre=metal
-                       │           │
-                 Identify       Modify how
-                 resource       collection
-                                is retrieved
+API Design
+    │
+    ├── Resource
+    │       └── /bands
+    │
+    ├── Path parameters
+    │       ├── /bands/:id          → identify a specific resource
+    │       └── c.req.param("id")
+    │
+    ├── Query parameters
+    │       ├── /bands?genre=metal  → modify how a collection is retrieved
+    │       ├── variables             → c.req.query()
+    │       ├── Filtering             → .filter()
+    │       └── Sorting               → .sort()
+    │
+    ├── Validation
+    │       └── if / guard clauses
+    │
+    ├── Results
+    │       └── arrays / .length
+    │
+    └── Transforming data
+            └── .map()
 ```
+
+**Design side:** the URL tells the client what resource they're working with and how to query it.
+
+**Implementation side:** your handler reads those values and uses array methods to shape the response.
 
 ---
 
