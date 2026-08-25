@@ -524,6 +524,69 @@ Use a query parameter:
 | Get album 12 for band 5        | `GET /bands/5/albums/12`            |
 | Delete album 12 for band 5     | `DELETE /bands/5/albums/12`         |
 
+---
+
+## 16. One Route Handles All Query Variants
+
+When we implement query parameters in Hono, we do **not** create a separate route for each combination.
+
+All of these requests are handled by the **same** handler:
+
+```http
+GET /bands
+GET /bands?genre=metal
+GET /bands?sort=name
+GET /bands?genre=metal&sort=name
+GET /bands?search=pantera
+GET /bands?page=2&limit=20
+```
+
+One route:
+
+```javascript
+app.get("/bands", (c) => {
+  // query handling here
+});
+```
+
+Think of it like:
+
+```text
+/bands
+   │
+   ├── /bands
+   │      → collection
+   │
+   ├── /bands?genre=metal
+   │      → collection filtered by genre
+   │
+   ├── /bands?sort=name
+   │      → collection sorted by name
+   │
+   └── /bands?genre=metal&sort=name
+          → collection filtered AND sorted
+```
+
+That is different from identifying a single resource with a route parameter:
+
+```text
+/bands/:id
+   │
+   └── /bands/5
+          → one specific band
+```
+
+Inside that handler we:
+
+1. Read whichever query parameters the client sent with `c.req.query()`
+2. Start from the full collection (e.g. copy the `bands` array)
+3. Apply filtering, search, sorting, and pagination in order — each step only runs if the matching query param is present
+4. Return the shaped result with `c.json()`
+
+`GET /bands` with no query string is the same route: we just skip the optional steps and return everything.
+
+The query string changes **how** the collection is retrieved. It does not change **which** route matches.
+
 ### Key takeaway
 
 The **HTTP method** describes the operation. The **URL** describes the resource. **Route parameters** identify resources. **Query parameters** modify how collections are retrieved.

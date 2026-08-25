@@ -527,22 +527,60 @@ RESPONSE
 
 Next, we get to the fun bit.
 
-We're going to actually create one of these queries:
+We're going to implement query handling in `server.js`. See **§16 in `apidesign_notes1.md`** for the full picture: every query variant hits **one** route.
 
-```http
-GET /bands?genre=metal
+```javascript
+app.get("/bands", (c) => {
+  // query handling here
+});
 ```
 
-You'll learn how Hono:
+Think of it like:
+
+```text
+/bands
+   │
+   ├── /bands
+   │      → collection
+   │
+   ├── /bands?genre=metal
+   │      → collection filtered by genre
+   │
+   ├── /bands?sort=name
+   │      → collection sorted by name
+   │
+   └── /bands?genre=metal&sort=name
+          → collection filtered AND sorted
+```
+
+That is different from identifying a single resource with a route parameter:
+
+```text
+/bands/:id
+   │
+   └── /bands/5
+          → one specific band
+```
+
+That single handler covers:
+
+```http
+GET /bands
+GET /bands?genre=metal
+GET /bands?sort=name
+GET /bands?genre=metal&sort=name
+GET /bands?search=pantera
+GET /bands?page=2&limit=20
+```
+
+Hono extracts each value with `c.req.query()`:
 
 ```js
 c.req.query("genre")
+c.req.query("sort")
+c.req.query("search")
+c.req.query("page")
+c.req.query("limit")
 ```
 
-extracts the value, and then we'll use JavaScript's:
-
-```js
-.filter()
-```
-
-to actually do something with it.
+Then we use JavaScript array methods — `.filter()`, `.sort()`, and so on — to shape the response. Each step is optional: if a query param isn't present, we skip that step.

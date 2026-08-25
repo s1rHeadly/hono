@@ -16,24 +16,29 @@ app.get("/", (c) => {
  */
 
 app.get("/bands", (c) => {
-  //query
+  // Get query parameters
   const genreQuery = c.req.query("genre");
-  // console.log(genreQuery); => preview http://localhost:2000/bands?genre=metal and view the result in the terminal window
+  const sortQuery = c.req.query("sort");
 
+  // Copy bands array to avoid mutation
+  let results = [...bands];
+
+  // GENRE QUERY
   if (genreQuery) {
-    const genreResults = bands.filter(
+    results = results.filter(
       (band) => band.genre.toLowerCase() === genreQuery.toLowerCase(),
     );
-    if (genreResults.length === 0) {
-      // nested if
-      return c.json(
-        { error: `No bands found for that genre ${genreQuery}` },
-        404,
-      );
-    }
-    return c.json(genreResults);
   }
-  return c.json(bands);
+
+  // SORT QUERY
+  if (sortQuery) {
+    results.sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+    );
+  }
+
+  // Return final results
+  return c.json(results);
 });
 
 /**
