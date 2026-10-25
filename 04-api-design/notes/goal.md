@@ -11,7 +11,7 @@ The goal isn't to learn lots of new Hono syntax. It's to learn **how to design a
         ↓
 02 Routing
         ↓
-03 Request Data
+03 CRUD API
         ↓
 04 API Design       ← we're here
         ↓

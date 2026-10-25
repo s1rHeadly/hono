@@ -266,7 +266,7 @@ From `src/server.js`:
 ```js
 app.get("/bands/:name", (c) => {
   const bandName = c.req.param("name");
-  return c.text(`Band requested: ${bandName}`);
+  return c.text(`You requested the band ${bandName}`);
 });
 ```
 
@@ -300,7 +300,7 @@ app.get("/bands/:name/albums/:album", (c) => {
   const bandName = c.req.param("name");
   const albumName = c.req.param("album");
 
-  return c.text(`${bandName} - ${albumName}`);
+  return c.text(`Band: ${bandName} | album: ${albumName}`);
 });
 ```
 
@@ -313,7 +313,7 @@ Request:
 Returns:
 
 ```
-korn - issues
+Band: korn | album: issues
 ```
 
 ---
@@ -471,10 +471,11 @@ const filteredBands = bands.filter(
 
 ```json
 [
-  { "name": "Pantera", "genre": "metal" },
-  { "name": "Metallica", "genre": "metal" }
+  { "id": 1, "name": "Pantera", "genre": "metal" }
 ]
 ```
+
+In `data/bands.js`, only Pantera has `genre: "metal"`. Metallica, Slayer, and Megadeth are `"thrash"` — so `GET /bands?genre=thrash` returns those three.
 
 ### Complete filtering example
 
@@ -491,6 +492,8 @@ app.get("/bands", (c) => {
   return c.json(filteredGenre);
 });
 ```
+
+The genre comparison is **case-sensitive**. Seed data uses lowercase values (`metal`, `thrash`, …), so `GET /bands?genre=Metal` returns no matches.
 
 Flow:
 
@@ -647,7 +650,7 @@ if (genre !== "all") {
 }
 ```
 
-Used throughout `server2.js` for the genre filter logic.
+Used in `server2.js` for the genre filter. The **live** handler uses a truthy check (`genre ? filter : copy`), not `genre !== "all"`. The `!== "all"` form is the commented alternative that goes with `c.req.query("genre") ?? "all"`.
 
 ---
 
@@ -694,6 +697,8 @@ app.get("/bands", (c) => {
 ```
 
 Hono uses the **first** matching route. So `GET /bands?genre=metal` still hits the first handler and returns `"List of Bands"` — the query handler never runs.
+
+The second handler also uses `${genre}` while the variable is named `genreQuery`. If that route ever ran, it would throw a `ReferenceError`. That is a second reason this file is a learning gotcha, not the finished API.
 
 That is why `server2.js` was created: one clean file with a single `GET /bands` route that handles filtering properly.
 

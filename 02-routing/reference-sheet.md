@@ -281,13 +281,11 @@ Example:
   {
     name: "Pantera",
     genre: "metal"
-  },
-  {
-    name: "Metallica",
-    genre: "metal"
   }
 ]
 ```
+
+In this project's `data/bands.js`, only Pantera is `"metal"`. Metallica is `"thrash"`.
 
 ---
 
@@ -309,7 +307,7 @@ Example:
 
 ```js
 const band = bands.find(
-  (band) => band.name === bandName
+  (band) => band.name.toLowerCase() === bandName.toLowerCase()
 );
 ```
 

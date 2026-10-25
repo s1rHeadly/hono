@@ -28,6 +28,8 @@ A guide for developers with **zero Hono experience**. Read it top to bottom like
 
 Hono runs on many runtimes. The core library is not tied to one way of opening a network port — you add an **adapter** for the runtime you use. In these learning projects we use **Node.js** with `@hono/node-server`.
 
+The numbered projects (`01-basic-server`, `02-routing`, `03-crud-api`, `04-api-design`) listen on **port 2000**. Examples in this cheat sheet use **port 3000** as a generic default. When a project's readme says 2000, use that.
+
 ---
 
 ## How Hono connects to Node
@@ -61,7 +63,7 @@ Based on `01-basic-server/` — one self-contained Hono project per numbered fol
 01-basic-server/
 ├── package.json              # Project name, npm scripts, dependencies
 ├── package-lock.json         # Locked versions from npm install
-├── README.md                 # How to run this project
+├── readme.md                 # How to run this project
 ├── src/
 │   └── server.js             # Hono app: routes, middleware, serve()
 ├── public/                   # (Optional) Static files the browser loads by URL
@@ -76,7 +78,7 @@ Based on `01-basic-server/` — one self-contained Hono project per numbered fol
 |------|---------|
 | `package.json` | Project name, npm scripts, and dependencies |
 | `package-lock.json` | Pins exact package versions for reproducible installs |
-| `README.md` | Run instructions and a short breakdown of the code |
+| `readme.md` | Run instructions and a short breakdown of the code |
 | `src/server.js` | The Hono app: imports, routes, and `serve()` |
 | `public/` | Static files (HTML, CSS, images) served to the browser |
 | `data/` | Stand-in data while you learn — JSON files your routes read and send back with `c.json()` |
@@ -153,7 +155,7 @@ Now `npm run dev` starts the server and restarts it when you edit files — inst
 2. Import `Hono` from `hono` and `serve` from `@hono/node-server`.
 3. Create the app with `const app = new Hono()`.
 4. Add routes with `app.get`, `app.post`, etc.
-5. Call `serve({ fetch: app.fetch, port: 3000 })` at the bottom so the process **stays running** and keeps answering requests.
+5. Call `serve({ fetch: app.fetch, port: 3000 })` at the bottom so the process **stays running** and keeps answering requests. (Use **2000** in the numbered learning projects.)
 
 A minimal server looks like this:
 

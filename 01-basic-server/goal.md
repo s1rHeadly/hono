@@ -11,7 +11,7 @@ The goal isn't to build a real API yet. It's to understand **how a Hono server w
         ↓
 02 Routing
         ↓
-03 Request Data
+03 CRUD API
         ↓
 04 API Design
         ↓

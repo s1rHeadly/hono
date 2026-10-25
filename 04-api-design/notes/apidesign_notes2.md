@@ -527,7 +527,9 @@ RESPONSE
 
 Next, we get to the fun bit.
 
-We're going to implement query handling in `server.js`. See **§16 in `apidesign_notes1.md`** for the full picture: every query variant hits **one** route.
+We're going to implement query handling in `src/server.js`. See **§16 in `apidesign_notes1.md`** for the full picture: every query variant hits **one** route.
+
+The current handler implements **genre**, **sort**, and **search**. `page` and `limit` are still design examples — they are not wired up yet.
 
 ```javascript
 app.get("/bands", (c) => {
@@ -570,8 +572,9 @@ GET /bands?genre=metal
 GET /bands?sort=name
 GET /bands?genre=metal&sort=name
 GET /bands?search=pantera
-GET /bands?page=2&limit=20
 ```
+
+(`GET /bands?page=2&limit=20` is the same *route*, but pagination is not implemented in `src/server.js` yet.)
 
 Hono extracts each value with `c.req.query()`:
 
@@ -579,8 +582,8 @@ Hono extracts each value with `c.req.query()`:
 c.req.query("genre")
 c.req.query("sort")
 c.req.query("search")
-c.req.query("page")
-c.req.query("limit")
 ```
+
+`c.req.query("page")` and `c.req.query("limit")` work the same way when you add pagination.
 
 Then we use JavaScript array methods — `.filter()`, `.sort()`, and so on — to shape the response. Each step is optional: if a query param isn't present, we skip that step.

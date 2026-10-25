@@ -6,60 +6,49 @@ For setup and core Hono concepts, see [`docs/hono.md`](../docs/hono.md).
 
 ---
 
-## Prerequisites
+## Setup
+
+### Prerequisites
 
 Install [Node.js](https://nodejs.org/) (LTS is fine). That includes **npm**, which downloads packages and runs scripts.
-
-Check they are available:
 
 ```bash
 node -v
 npm -v
 ```
 
----
+### Install and run
 
-## Create this project from scratch
+Choose **one** path.
 
-Assume you have **no** `node_modules/`, no `package.json`, and no source files yet. Follow these steps in order.
+**Already have this folder** (cloned the repo, or `package.json` already exists):
 
-### 1. Create the project folder
+```bash
+cd 03-crud-api
+npm install
+npm run dev
+```
+
+`npm install` with no package names reads `package.json` (and `package-lock.json` if present) and downloads everything into `node_modules/`. Skip the starter files below — they are already in the repo.
+
+**Creating from scratch** (no `node_modules/`, no `package.json`, no source files):
 
 ```bash
 mkdir 03-crud-api
 cd 03-crud-api
-```
-
-### 2. Initialize npm
-
-```bash
 npm init -y
-```
-
-### 3. Install Hono and the Node adapter
-
-```bash
 npm install hono @hono/node-server
-```
-
-### 4. Install nodemon (development only)
-
-```bash
 npm install --save-dev nodemon
-```
-
-### 5. Configure `package.json`
-
-```bash
 npm pkg set type=module
 npm pkg set scripts.dev="nodemon --watch src --exec node src/server.js"
+mkdir data src
 ```
 
-### 6. Create `data/bands.js`
+Then create the two starter files in the next section.
 
-```bash
-mkdir data
-```
+Either path starts the server at `http://localhost:2000`.
+
+### Starter files (from scratch only)
 
 Create `data/bands.js` with:
 
@@ -74,15 +63,7 @@ const bands = [
 export default bands;
 ```
 
-### 7. Create `src/server.js`
-
-```bash
-mkdir src
-```
-
-Create `src/server.js` with the CRUD routes. Start with the GET routes, then add POST, PATCH, and DELETE as you work through this readme — or copy the full file from the repo if you want everything at once.
-
-Minimal starting point (GET routes only):
+Create `src/server.js` with the GET routes. Start here, then add POST, PATCH, and DELETE as you work through this readme — or copy the full file from the repo if you want everything at once.
 
 ```js
 import { Hono } from "hono";
@@ -121,30 +102,11 @@ serve({
 });
 ```
 
-Add POST, PATCH, and DELETE handlers as you reach each section below. The completed `src/server.js` in the repo has all routes in place.
+The completed `src/server.js` in the repo has all routes in place.
 
-### 8. Start the server
+### Using Postman
 
-```bash
-npm run dev
-```
-
-Server runs at `http://localhost:2000`.
-
----
-
-## Run this project (existing folder)
-
-If you cloned the repo or already have this folder with a `package.json`, from the `03-crud-api` directory:
-
-```bash
-npm install
-npm run dev
-```
-
-`npm install` with no package names reads `package.json` (and `package-lock.json` if present) and downloads everything into `node_modules/`.
-
-Server runs at `http://localhost:2000`. Open Postman and click **+** to create a request. Pick the HTTP method from the **dropdown left of the URL** — do not type `GET` or `POST` into the URL box.
+Open Postman and click **+** to create a request. Pick the HTTP method from the **dropdown left of the URL** — do not type `GET` or `POST` into the URL box.
 
 For POST and PATCH bodies, use **Body → raw → JSON**. Postman sets `Content-Type: application/json`, which your server needs for `await c.req.json()`.
 
@@ -153,7 +115,7 @@ For POST and PATCH bodies, use **Body → raw → JSON**. Postman sets `Content-
 ## How to work through this project
 
 ```text
-1. Start the server (see setup above)
+1. Start the server (see Setup above)
 2. Confirm GET routes work (Postman steps 1–2, or skip if already done)
 3. Read "The API data flow" → test POST in Postman
 4. Read "PATCH an existing band" → test PATCH in Postman
@@ -274,6 +236,8 @@ Same idea.
 ```js
 return c.json(bandObj, 201);
 ```
+
+`201 Created` is the conventional status for a successful POST. The completed `src/server.js` currently returns `c.json(bandObj)` with no status argument, which is **200**. Add `201` when you write the handler (or as a small follow-up).
 
 Client receives:
 
@@ -478,11 +442,11 @@ We need:
 
 ```json
 {
-  "error": "Band not found"
+  "error": "The band id: 999 is not found"
 }
 ```
 
-with status `404`.
+with status `404`. That is the same message shape as GET and DELETE.
 
 ### Your turn
 
@@ -727,13 +691,14 @@ You get the remaining bands back:
 ```json
 {
   "bands": [
-    { "id": 1, "name": "Pantera", "genre": "Metal", "formed": 1981 },
-    { "id": 3, "name": "Gojira", "genre": "Progressive Metal", "formed": 1996 }
+    { "id": 1, "name": "Pantera", "genre": "Groove Metal", "formed": 1981 },
+    { "id": 3, "name": "Gojira", "genre": "Progressive Metal", "formed": 1996 },
+    { "id": 4, "name": "Sleep Token", "genre": "Alternative Metal", "formed": 2016 }
   ]
 }
 ```
 
-(Exact list depends on what you created or deleted earlier.)
+If you followed the recommended test order, Pantera's genre is already `Groove Metal` from the PATCH, and Tool from the POST will also be in this list. The exact list always depends on what you created or deleted earlier.
 
 ---
 
@@ -768,8 +733,8 @@ Once the happy path works, try these to see how your API handles bad input:
 | `GET /bands/999` | `404` — `{ "error": "The band id: 999 is not found" }` |
 | `POST /bands` with missing `"formed"` | `400` — `{ "error": "Missing required fields" }` |
 | `POST /bands` with duplicate name (e.g. Tool twice) | `409` — `{ "error": "Band already exists" }` |
-| `PATCH /bands/999` | `404` — band not found |
-| `DELETE /bands/999` | `404` — band not found |
+| `PATCH /bands/999` | `404` — `{ "error": "The band id: 999 is not found" }` |
+| `DELETE /bands/999` | `404` — `{ "error": "The band id: 999 is not found" }` |
 
 ---
 
@@ -795,7 +760,9 @@ The data work happens inside:
 
 ```js
 bands.find(...)
-bands.filter(...)
+bands.findIndex(...)
+bands.push(...)
+bands.splice(...)
 Object.assign(...)
 ```
 
@@ -914,13 +881,17 @@ You reinforced:
 
 Find one item.
 
-**`.filter()`**
+**`.findIndex()`**
 
-Find many items.
+Find the position of one item (needed for DELETE).
 
 **`.push()`**
 
 Add an item.
+
+**`.splice()`**
+
+Remove an item by index.
 
 **`Object.assign()`**
 
@@ -929,3 +900,5 @@ Merge objects.
 **`async/await`**
 
 Handle promises.
+
+(`filter()` was the collection tool in Project 02 — this CRUD API looks up one band at a time.)

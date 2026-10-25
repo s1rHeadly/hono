@@ -204,18 +204,18 @@ Open in a browser:
 
 If you cloned the repo or already have this folder with a `package.json`, from the `change select api` directory:
 
+The current `package.json` has no `dev` script and does not list nodemon. Add both, then install and run:
+
 ```bash
+npm install --save-dev nodemon
+npm pkg set scripts.dev="nodemon --watch server --watch public --exec node server/index.js"
 npm install
 npm run dev
 ```
 
-If `package.json` has no `dev` script yet, add it:
+Then open `http://localhost:5000`.
 
-```bash
-npm pkg set scripts.dev="nodemon --watch server --watch public --exec node server/index.js"
-```
-
-Then run `npm run dev` and open `http://localhost:5000`.
+Without those two `npm pkg` / nodemon steps, `npm run dev` will fail.
 
 ---
 

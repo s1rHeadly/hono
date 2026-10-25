@@ -11,7 +11,7 @@ The goal isn't to learn API design theory yet. It's to learn **how to implement 
         ↓
 02 Routing
         ↓
-03 Request Data    ← we're here
+03 CRUD API        ← we're here
         ↓
 04 API Design
         ↓
@@ -130,8 +130,8 @@ You'll use status codes with real meaning:
 
 **Success**
 
-- `200` — successful read, update, or delete
-- `201` — resource created (POST)
+- `200` — successful read or update. This project's DELETE also returns `200` with the remaining bands.
+- `201` — resource created (POST). Conventional for create; add it as the second argument to `c.json()` — the completed `src/server.js` currently returns `200` unless you add `201`.
 
 **Client errors**
 

@@ -541,6 +541,8 @@ GET /bands?search=pantera
 GET /bands?page=2&limit=20
 ```
 
+The current `src/server.js` implements genre, sort, and search. `page` and `limit` are the same *kind* of query param (same route) but are not wired up yet.
+
 One route:
 
 ```javascript
@@ -580,7 +582,7 @@ Inside that handler we:
 
 1. Read whichever query parameters the client sent with `c.req.query()`
 2. Start from the full collection (e.g. copy the `bands` array)
-3. Apply filtering, search, sorting, and pagination in order — each step only runs if the matching query param is present
+3. Apply filtering, search, and sorting in order — each step only runs if the matching query param is present (pagination with `page` / `limit` is the same idea, once you add it)
 4. Return the shaped result with `c.json()`
 
 `GET /bands` with no query string is the same route: we just skip the optional steps and return everything.

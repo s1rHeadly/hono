@@ -11,7 +11,7 @@ The goal isn't to build a full API yet. It's to learn **how Hono connects URLs t
         ↓
 02 Routing          ← we're here
         ↓
-03 Request Data
+03 CRUD API
         ↓
 04 API Design
         ↓
@@ -139,7 +139,81 @@ const band = bands.find(
 | --- | --- |
 | `/bands` | Return the full collection |
 | `/bands?genre=metal` | Filter the collection |
-| `/bands/pantera` | Find a single item |
+| `/bands/pantera` | Find a single band |
+
+### 7b. Nested resources — band **and** album (two route params)
+
+This is a **different** URL shape from `/bands/:name` alone. The path names **two** resources: which band, then which album under that band.
+
+```text
+/bands/:name/albums/:album
+```
+
+Example request:
+
+```text
+GET /bands/korn/albums/issues
+```
+
+Hono does not know about Korn or albums — it only matches segments and stores strings:
+
+| Segment in URL | Route placeholder | Value Hono captures |
+| --- | --- | --- |
+| `korn` | `:name` | `"korn"` |
+| `issues` | `:album` | `"issues"` |
+
+Each band in `data/bands.js` has an `albums` array (real studio albums; `slug` matches the URL segment):
+
+```js
+{
+  id: 2,
+  name: "Korn",
+  genre: "nu-metal",
+  albums: [
+    { id: 4, slug: "issues", title: "Issues", year: 1999 },
+    // ...
+  ],
+}
+```
+
+Handler pattern in Hono (`server.js`):
+
+```js
+app.get("/bands/:name/albums/:album", (c) => {
+  const bandName = c.req.param("name");
+  const albumSlug = c.req.param("album");
+
+  const band = bands.find(
+    (b) => b.name.toLowerCase() === bandName.toLowerCase()
+  );
+  if (!band) {
+    return c.json({ error: "Band not found" }, 404);
+  }
+
+  const album = band.albums.find(
+    (a) => a.slug.toLowerCase() === albumSlug.toLowerCase()
+  );
+  if (!album) {
+    return c.json({ error: "Album not found" }, 404);
+  }
+
+  return c.json(album);
+});
+```
+
+| URL | What happens |
+| --- | --- |
+| `GET /bands/korn/albums/issues` | Resolve Korn, then find album with slug `issues` → return that album JSON |
+| `GET /bands/pantera/albums/cowboys-from-hell` | Pantera + that album |
+| `GET /bands/korn/albums/follow-the-leader` | Korn + that album |
+| `GET /bands/pantera/albums/unknown` | Band exists, album slug missing → 404 |
+| `GET /bands/not-a-band/albums/issues` | Band missing → 404 (album lookup never matters) |
+
+```text
+/bands/korn/albums/issues  = the "Issues" album resource belonging to Korn
+```
+
+Still **GET only** — you're navigating nested data, not creating albums.
 
 ### 8. Error handling with status codes
 
@@ -211,13 +285,18 @@ Two server files:
 | `src/server.js` | Route parameters — dynamic path segments like `/bands/:name` |
 | `src/server2.js` | Query parameters, filtering, and finding a single band |
 
-Try these URLs:
+Try these URLs (default `npm run dev` runs `server2.js`):
 
 ```text
 GET /bands
 GET /bands?genre=metal
 GET /bands/korn
-GET /bands/pantera/albums/issues
+```
+
+The nested album route lives in `server.js` only:
+
+```text
+GET /bands/korn/albums/issues
 ```
 
 The important part is that you'll understand **why** each URL shape exists and **how** Hono extracts values from it.
