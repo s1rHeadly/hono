@@ -145,19 +145,67 @@ const band = bands.find(
 
 This is a **different** URL shape from `/bands/:name` alone. The path names **two** resources: which band, then which album under that band.
 
+#### Reading the route pattern vs the browser URL
+
+You register a **pattern** in code. The browser sends a **concrete path**. Hono compares them segment by segment.
+
+```js
+app.get("/bands/:name/albums/:album", (c) => {
+  // handler runs when the path matches the pattern above
+});
+```
+
+Pattern in your editor:
+
 ```text
 /bands/:name/albums/:album
 ```
 
-Example request:
+Example request in the browser (or with curl):
+
+```text
+GET /bands/pantera/albums/cowboys-from-hell
+```
+
+Not everything in the pattern changes. Split it like this:
+
+| Piece in pattern | What it is | Must match in the URL? | Example value from the request above |
+| --- | --- | --- | --- |
+| `bands` | **Fixed path segment** (literal text) | Yes — exact word `bands` | `bands` |
+| `:name` | **Route parameter** (placeholder) | Any single segment — Hono saves it | `pantera` |
+| `albums` | **Fixed path segment** (literal text) | Yes — exact word `albums` | `albums` |
+| `:album` | **Route parameter** (placeholder) | Any single segment — Hono saves it | `cowboys-from-hell` |
+
+- **Fixed segments** (`bands`, `albums`): you chose these words when you designed the API. Every matching request must include them spelled exactly that way. They are **not** variables and they do **not** use `:`.
+- **Placeholders** (`:name`, `:album`): the `:` tells Hono “capture whatever the client put in this slot.” The label after `:` (`name`, `album`) is only for your code — you use the same label in `c.req.param("name")` and `c.req.param("album")`.
+
+```text
+Pattern:  /bands/:name/albums/:album
+              │      │       │      │
+              │      │       │      └── placeholder → album slug
+              │      │       └── fixed word "albums"
+              │      └── placeholder → band name
+              └── fixed word "bands"
+
+Request:  /bands/pantera/albums/cowboys-from-hell
+```
+
+After a match, read the captured placeholders inside the handler:
+
+```js
+const bandName = c.req.param("name");   // "pantera"
+const albumSlug = c.req.param("album"); // "cowboys-from-hell"
+```
+
+The word `albums` in the **URL path** is just routing structure (“albums live under a band”). The `albums` **array** on each band in `data/bands.js` is your JSON data — same word, different job.
+
+Another valid request (same pattern, different placeholder values):
 
 ```text
 GET /bands/korn/albums/issues
 ```
 
-Hono does not know about Korn or albums — it only matches segments and stores strings:
-
-| Segment in URL | Route placeholder | Value Hono captures |
+| Segment in request | Matched against | Value Hono captures |
 | --- | --- | --- |
 | `korn` | `:name` | `"korn"` |
 | `issues` | `:album` | `"issues"` |
